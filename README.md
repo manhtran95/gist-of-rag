@@ -1,50 +1,45 @@
 # Gist of RAG
 
-## Idea
-This project helps the understanding of Retrieval Augmented Generation.
+A minimal project to understand Retrieval Augmented Generation (RAG) using LangChain, OpenAI, and Pinecone.
 
-### Ingestion
-We will load a Medium blog, split it into chunks, turn the chunks into embeddings and insert into a vector store's index.
+## How it works
 
-### Retrieval
-We will turn user query into embedding, search against the vector store's index and return the matching chunks. The returned chunks will be added to the prompt before the prompt is sent to LLM together with the query, helping the LLM to answer the query with augmented information.
+**Ingestion** (`ingestion.py`) — Load a text document, split it into chunks, embed each chunk with OpenAI, and store them in a Pinecone index.
+
+**Retrieval** (`main.py`) — Embed the user query, search Pinecone for matching chunks, inject the results into a prompt, and send it to an LLM. Two implementations are included:
+- Without LCEL — manual step-by-step chain
+- With LCEL — declarative pipeline using LangChain Expression Language (recommended)
 
 ## Services
-* **[LangChain](https://www.langchain.com/)** framework for building AI agents.
-* **[LangSmith]** for monitoring AI agent workflows.
-* **[LLM]** OpenAI(see model list at https://developers.openai.com/api/docs/models) or Ollama(see model list at https://ollama.com/search).
-* **[Embedding]** OpenAI Embedding or Ollama Embedding.
-* **[Pinecone]** as Vector Store.
+
+| Service | Role |
+|---|---|
+| [LangChain](https://www.langchain.com/) | RAG pipeline framework |
+| [LangSmith](https://www.langchain.com/langsmith) | Monitoring and tracing |
+| [OpenAI](https://platform.openai.com/docs/models) | LLM and embeddings |
+| [Pinecone](https://www.pinecone.io) | Vector store |
 
 ## Environment variables
-#### LLM
-Register an account with OpenAI(https://developers.openai.com) or Ollama(https://ollama.com) to get their API key.
-#### Embedding
-You can use OpenAI embedding model by setting OPENAI_API_KEY, or Ollama embedding model by setting OLLAMA_EMBEDDING_MODEL, full list here (https://docs.ollama.com/capabilities/embeddings).
-#### Monitoring
-Register an account with Langsmith(https://www.langchain.com/langsmith), create a project, create an API key and add them to your .env file.
-#### Pinecone
-Register an account with Pinecone(https://www.pinecone.io), create an index and an API key and add them to your .env file.
 
-## Quick Start
+Create a `.env` file and fill in:
 
-1.  **Initialize Project**
-    ```bash
-    uv init
-    ```
+| Variable | Description |
+|---|---|
+| `OPENAI_API_KEY` | From [platform.openai.com](https://platform.openai.com) |
+| `PINECONE_API_KEY` | From [pinecone.io](https://www.pinecone.io) |
+| `INDEX_NAME` | Your Pinecone index name |
+| `LANGCHAIN_API_KEY` | From [langchain.com/langsmith](https://www.langchain.com/langsmith) |
+| `LANGCHAIN_PROJECT` | Your LangSmith project name |
 
-2.  **Add Dependencies**
-    Install the necessary packages in pyproject.toml:
-    ```bash
-    uv lock
-    uv sync
-    ```
+## Quick start
 
-3.  **Setup Environment**
-    Copy the `.env.example` to `.env` and fill in your keys.
+```bash
+# Install dependencies
+uv sync
 
-4.  **Run the Application**
-    Use `uv run` to automatically load the virtual environment and `.env` file:
-    ```bash
-    uv run main.py
-    ```
+# Ingest documents into Pinecone
+uv run ingestion.py
+
+# Run the RAG query "What is Pinecone?"
+uv run main.py
+```
