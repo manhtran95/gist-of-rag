@@ -1,129 +1,407 @@
-By Frank Liu (@frankzliu)
 
-This article has been updated since it was first published and is now part of a blog series that serves as a coursebook for concepts and guides related to vector databases.
+Search
+Write
 
-Jump to:
+Emarco
+Vector Database: What is it and why you should know it?
+Ejiro Onose
+Ejiro Onose
 
-· Vector databases from 1000 feet
-· Vector databases vs. vector search libraries
-· Vector search plugins for traditional databases
-· Technical challenges
-· Wrapping up
+·
+Follow
 
-Inthe previous tutorial, we took a quick look at the ever-increasing amount of data that is being generated on a daily basis. We then covered how these bits of data can be split into structured/semi-structured and unstructured data, the differences between them, and how modern machine learning can be used to understand unstructured data through embeddings. Finally, we briefly touched upon unstructured data processing via ANN search.
+9 min read
+·
+Dec 22, 2023
+100
 
-Through all of this information, it’s now clear that the ever-increasing amount of unstructured data requires a paradigm shift and a new category of database management system — the vector database.
 
-A vector database is a fully managed, no-frills solution for storing, indexing, and searching across a massive dataset of unstructured data that leverages the power of embeddings from machine learning models.
 
-Vector databases from 1000 feet
-Guess how many curators it took to label the now-famous ImageNet dataset. Ready for the answer?
 
-25000 people (that’s a lot).
 
-Being able to search across images, video, text, audio, and other forms of unstructured data via their content rather than human-generated labels or tags is exactly what vector databases were meant to solve. When combined with powerful machine learning models, vector databases such as Milvus have the ability to revolutionize e-commerce solutions, recommendation systems, computer security, pharmaceuticals, and many other industries.
 
-As mentioned in the introduction, a vector database is a fully managed, no-frills solution for storing, indexing, and searching across a massive dataset of unstructured data that leverages the power of embeddings from machine learning models.
 
-But let’s think about it from a user perspective. What good is a piece of technology without strong usability and a good user API? In concert with the underlying technology, multi-tenancy and usability are also incredibly important attributes for vector databases. Let’s list out all of the features a mature vector database should have (many of these features overlap with those of databases for structured/semi-structured data):
+“If 2021 was the year of graph databases, 2023 is the year of vector databases” — Chip Huen.
 
-Scalability and tunability: As the number of unstructured data elements stored in a vector database grows into the hundreds of millions or billions, horizontal scaling across multiple nodes becomes paramount (scaling up by manually inserting sticks of RAM into a server rack every 3 months is no fun). Furthermore, differences in insert rate, query rate, and underlying hardware may result in different application needs, making overall system tunability a mandatory feature for vector databases.
-Multi-tenancy and data isolation: Supporting multiple users is an obvious feature for all database systems. However, going guns blazing and creating a new vector database for every new user will probably turn out poorly for everyone. Parallel to this notion is data isolation — the idea that any inserts, deletes, or queries made to one collection in a database should be invisible to the rest of the system unless the collection owner explicitly wishes to share the information.
-A complete suite of APIs: A database without a full suite of APIs and SDKs is, frankly speaking, not a real database. For example, Milvus maintains Python, Node, Go, and Java SDKs for communicating with and administering a Milvus database.
-An intuitive user interface/administrative console: User interfaces can help significantly reduce the learning curve associated with vector databases. These interfaces also expose new vector database features and tools that would otherwise be inaccessible.
-Phew. That was quite a bit of info, so we’ll summarize it right here: a vector database should have the following features: 1) scalability and tunability, 2) multi-tenancy and data isolation, 3) a complete suite of APIs, and 4) an intuitive user interface/administrative console. In the next two sections, we’ll follow up on this concept by comparing vector databases versus vector search libraries and vector search plugins, respectively.
+Why? you ask...
 
-Vector databases vs. vector search libraries
-A common misconception that I hear around the industry is that vector databases are merely wrappers around ANN search algorithms. This could not be further from the truth!
+Well, it’s because Generative AI and Large Language Models (LLMs) are now popular and one of the best ways to handle LLM data is with a vector database because vector databases provide the ideal infrastructure for managing the complex, high-dimensional data that LLMs produce and thrive on.
 
-A vector database is, at its core, a full-fledged solution for unstructured data. As we’ve already seen in the previous section, this means that user-friendly features present in today’s database management systems for structured/semi-structured data — cloud-nativity, multi-tenancy, scalability, etc — should also be attributes for a mature vector database as well. All of these features will become clear as we dive deeper into this tutorial.
+In this article, I’ll discuss what vector databases are, how they work, and some excellent vector database tools you should check out.
 
-On the other hand, projects such as FAISS, ScaNN, and HNSW are lightweight ANN libraries rather than managed solutions. The intention of these libraries is to aid in the construction of vector indices — data structures designed to significantly speed up nearest neighbor search for multi-dimensional vectors[1]. If your dataset is small and limited, these libraries can prove to be sufficient for unstructured data processing, even for systems running in production. However, as dataset sizes increase and more users are onboarded, the problem of scale becomes increasingly difficult to solve.
+Before we dive into vector databases, let’s first understand what a vector is.
 
-Press enter or click to view image in full size
-Vector databases also operate in a totally different layer of abstraction from vector search libraries — vector databases are full-fledged services, while ANN libraries are meant to be integrated into the application that you’re developing. In this sense, ANN libraries are one of the many components that vector databases are built on top of, similar to how Elasticsearch is built on top of Apache Lucene.
+What is a Vector?
+In machine learning (ML), a vector is a collection of numerical values that represent the characteristics or features of multi-dimensional objects such as words, images, etc.
 
-It’s really as easy as that — 3 lines of code. With a library such as FAISS or ScaNN, there is unfortunately no easy way of doing this without manually re-creating the entire index at certain checkpoints. Even if you could, vector search libraries still lack scalability and multi-tenancy, two of the most important vector database features.
 
-Vector search plugins for traditional databases
-Great, now that we’ve established the difference between vector search libraries and vector databases, let’s take a look at how vector databases differ from vector search plugins.
+source
+For example, a vector representing an image might contain values corresponding to the pixel intensities of the image, in the order of the image’s color channels.
 
-An increasing number of traditional databases and search systems such as Clickhouse and Elasticsearch are including built-in vector search plugins. Elasticsearch 8.0, for example, includes vector insertion and ANN search functionality that can be called via restful API endpoints. The problem with vector search plugins should be clear as night and day — these solutions do not take a full-stack approach to embedding management and vector search. Instead, these plugins are meant to be enhancements on top of existing architectures, thereby making them limited and unoptimized. Developing an unstructured data application atop a traditional database would be like trying to fit lithium batteries and electric motors inside a the frame of a gas-powered car — not a great idea!
 
-To illustrate why this is, let’s go back to the list of features that a vector database should implement (from the first section). Vector search plugins are missing two of these features — tunability and user-friendly APIs/SDKs. I’ll continue to use Elasticsearch’s ANN engine as an example; other vector search plugins operate very similarly so I won’t go too much further into detail. Elasticsearch supports vector storage via the dense_vector data field type and allows for querying via the _knn_search endpoint
+Source
+What are Embeddings?
+An embedding is a technique for representing complex data, such as images, text, or audio, as numerical vectors.
 
-PUT index
-{
-"mappings": {
-"properties": {
-"image-vector": {
-"type": "dense_vector",
-"dims": 128,
-"index": true,
-"similarity": "l2_norm"
-}
-}
-}
-}
-PUT index/_doc
-{
-"image-vector": [0.12, 1.34, …]
-}
-GET index/_knn_search
-{
-"knn": {
-"field": "image-vector",
-"query_vector": [-0.5, 9.4, …],
-"k": 10,
-"num_candidates": 100
-}
-}
-Elasticsearch’s ANN plugin supports only one indexing algorithm: Hierarchical Navigable Small Worlds, also known as HNSW (I like to think that the creator was ahead of Marvel when it came to popularizing the multiverse). On top of that, only L2/Euclidean distance is supported as a distance metric. This is an okay start, but let’s compare it to Milvus, a full-fledged vector database. Using pymilvus:
+These embeddings capture the essence of the data and show clearly the semantic similarity (or relationship) between different objects, with similar objects having vectors that are close to each other in the vector space. Thus, ML algorithms allow them to be efficiently processed and analyzed.
 
->>> field1 = FieldSchema(name='id', dtype=DataType.INT64, description='int64', is_primary=True)
->>> field2 = FieldSchema(name='embedding', dtype=DataType.FLOAT_VECTOR, description='embedding', dim=128, is_primary=False)
->>> schema = CollectionSchema(fields=[field1, field2], description='hello world collection')
->>> collection = Collection(name='my_collection', data=None, schema=schema)
->>> index_params = {
-'index_type': 'IVF_FLAT',
-'params': {'nlist': 1024},
-"metric_type": 'L2'}
->>> collection.create_index('embedding', index_params)
->>> search_param = {
-'data': vector,
-'anns_field': 'embedding',
-'param': {'metric_type': 'L2', 'params': {'nprobe': 16}},
-'limit': 10,
-'expr': 'id_field > 0'
-}
->>> results = collection.search(**search_param)
-While both Elasticsearch and Milvus have methods for creating indexes, inserting embedding vectors, and performing nearest neighbor search, it’s clear from these examples that Milvus has a more intuitive vector search API (better user-facing API) and broader vector index + distance metric support (better tunability). Milvus also plans to support more vector indices and allow for querying via SQL-like statements in the future, further improving both tunability and usability.
 
-We just blew through quite a bit of content. This section was admittedly fairly long, so for those of you who skimmed it, here’s a quick tl;dr: Milvus is better than vector search plugins because Milvus was built from the ground-up as a vector database, allowing for a richer set of features and an architecture more suited towards unstructured data.
+source
+ML models often generate embeddings as part of their training process. For LLMs, an embedding model is put in place to create the embeddings
 
-Technical challenges
-Earlier in this tutorial, I listed the desired features a vector database should implement, before comparing vector databases to vector search libraries and vector search plugins. Now, let’s briefly go over some high-level technical challenges associated with modern vector databases. In future tutorials, we’ll provide an overview of how Milvus tackles each of these, in addition to how these technical decisions improve Milvus’ performance over other open-source vector databases.
+Embeddings are vectors that represent the essential features of a data point. For example, a natural language processing model might generate embeddings for words or sentences.
 
-Picture an airplane. The airplane itself contains a number of interconnected mechanical, electrical, and embedded systems, all working in harmony to provide us with a smooth and pleasurable in-flight experience. Likewise, a vector database is composed of a number of evolving software components. Roughly speaking, these can be broken down into the storage, the index, and the service. Although these three components are tightly integrated[2], companies such as Snowflake have shown the broader storage industry that “shared nothing” database architectures are arguably superior to the traditional cloud database models. Thus, the first technical challenge associated with vector databases is designing a flexible and scalable data model.
+Embeddings can be used for a variety of tasks, such as clustering, classification, and anomaly detection. Vector databases can be used to store and query embeddings efficiently, which makes them ideal for ML applications.
 
-Great, so we have a data model. What’s next?
+To see what embeddings look like, check out this Vectorizer created by Kenny, it converts texts to embeddings.
 
-With data already stored in a vector database, being able to search across that data, i.e. querying and indexing, is the next important component. The compute-heavy nature of machine learning and multi-layer neural networks has allowed GPUs, NPUs/TPUs, FPGAs, and other general purpose compute hardware to flourish. Vector indexing and querying is also compute-heavy, operating at maximum speed and efficiency when run on accelerators. This diverse set of compute resources gives way to the second main technical challenge, developing a heterogeneous computing architecture.
+Note: An embedding is a vector representation, but not all vectors are embeddings.
 
-With a data model and architecture in place, the last step is making sure your application can, well, read from the database — this ties closely into the API and user interface bullet points mentioned in the first section. While a new category of database necessitates a new architecture in order to extract maximal performance at minimal cost, the majority of vector database users are still acclimated to traditional CRUD operations (e.g. INSERT, SELECT, UPDATE, and DELETE in SQL). Therefore, the final primary challenge is developing a set of APIs and GUIs that leverage existing user interface conventions while maintaining compatibility with the underlying architecture.
+Putting it all together, let us define a vector database.
 
-Note how each of the three components corresponds to a primary technical challenge. With that being said, there is no one-size-fits-all architecture for vector databases. The best vector databases will fulfill all of these technical challenges by focusing on delivering the features mentioned in the first section.
+What is a Vector Database?
+A vector database is a type of database that stores and manages unstructured data, such as text, images, or audio, in high-dimensional vectors, to make it easy to find and retrieve similar objects quickly at scale in production.
 
-Wrapping up
-In this tutorial, we took a quick tour of vector databases. Specifically, we looked at 1) what features go into a mature vector database, 2) how a vector database differs from vector search libraries, 3) how a vector database differs from vector search plugins in traditional databases or search systems, and 4) the key challenges associated with building a vector database.
+They work by using algorithms like vector similarity search to index and query vector embeddings,
 
-This tutorial is not meant to be a deep dive into vector databases, nor is it meant to show how vector databases can be used in applications. Rather, the goal is to provide an overview of vector databases. This is where your journey truly begins!
+The importance of vector databases in LLM projects lies in their ability to provide easy search, high performance, scalability, and data retrieval by comparing values and finding similarities between them
 
-In the next tutorial, we’ll provide an introduction to Milvus, the world’s most popular open-source vector database:
 
-We’ll provide a brief history of Milvus, including the most important question — where does the name come from!
-We’ll cover how Milvus 1.0 differs from Milvus 2.0 and where the future of Milvus lies.
-We’ll discuss the differences between Milvus and other vector databases such as Google Vertex AI’s Matching Engine.
-We’ll briefly go over some common vector database applications.
-See you in the next tutorial.
+Vector database’s search capabilities can be used in various applications ranging from classical ML use cases, such as recommender systems, to providing long-term memory to large language models in modern applications, to text understanding, video summarization, drug discovery, stock market analysis, and much more.
 
+As data continues to grow in complexity and volume, the scalability, speed, and accuracy offered by vector databases position them as a critical tool for extracting meaningful insights and unlocking new opportunities across various domains.
+
+What are the benefits of Vector Databases?
+Here are some specific reasons why vector databases are so well-suited for LLMs and generative AI:
+
+Handling Massive Data Loads
+Vector databases can handle the massive amounts of data that are generated by LLMs and generative AI. Traditional databases might struggle with the millions or even billions of data points produced in a single run, but vector databases are purpose-built to handle such large datasets with efficiency.
+
+Efficient Similarity Searches
+Vector databases can find data that is similar to a given query vector. This is essential for tasks such as image search and content recommendation, which are often used in conjunction with LLMs and generative AI. For example, if you are using an LLM to generate a new image, you can use a vector database to find other images that are similar to the generated image.
+
+Integration with ML Algorithms
+Vector databases can be integrated with machine learning algorithms. This makes it easy to use vector databases to train and evaluate machine learning models. For example, you can use a vector database to store the data that is used to train a model, and then use the vector database to search for the data that is most relevant to the model.
+
+Handling Vector Embeddings
+Vector databases provide a superior solution for handling vector embeddings by addressing the limitations of standalone vector indices, such as scalability challenges, cumbersome integration processes, and the absence of real-time updates and built-in security measures.
+
+List of Some Top Vector Databases
+There are several vector database solutions available in the market, each with its own set of features and capabilities. Some of the top vector database solutions include:
+
+Weaviate
+Pinecone
+Chroma DB
+Qdrant
+Milvus
+Here’s an overview of some of the features of these vector databases. You can go see this comprehensive vector database features matrix by Dhruv Anand
+
+
+Source: Author
+Weaviate
+Weaviate is an open-source vector database that can be used to store, search, and manage vectors of any dimensionality. It is designed to be scalable and easy to use, and it can be deployed on-premises or in the cloud.
+
+
+Features:
+
+Weaviate can store and search vectors from various data modalities, including images, text, and audio.
+Weaviate provides seamless integration with machine learning frameworks such as Hugging Face, Open AI, LangChain, Llamaindex, TensorFlow, PyTorch, and Scikit-learn.
+Weaviate can index vectors in real-time, making it ideal for applications that require low-latency search.
+Weaviate can be scaled to handle large volumes of data and high query throughput.
+Weaviate can be used in memory for fast search or with disk-based storage for larger datasets.
+Weaviate provides a user-friendly interface for managing vectors and performing searches.
+Pinecone
+Pinecone is a fully managed cloud-based vector database that is designed to make it easy for businesses and organizations to build and deploy large-scale ML applications.
+
+
+Some Pinecone Features:
+
+Pinecone is designed to be fast and scalable, allowing for efficient retrieval of similar data points based on their vector representations.
+It can handle large-scale ML applications with millions or billions of data points.
+Pinecone provides infrastructure management or maintenance to its users.
+Pinecone can handle high query throughput and low latency search.
+Pinecone is a secure platform that meets the security needs of businesses and organizations.
+Pinecone is designed to be user-friendly and accessible via its simple API for storing and retrieving vector data, making it easy to integrate into existing ML workflows.
+Pinecone supports real-time updates, allowing for efficient updates to the vector database as new data points are added. This ensures that the vector database remains up-to-date and accurate over time.
+Pinecone can be synced with data from various sources using tools like Airbyte and monitored using Datadog
+Chroma DB
+Chroma DB is an open-source vector store for storing and retrieving vector embeddings. It is mainly used to save embeddings along with metadata to be used later by LLMs and can also be used for semantic search engines over text data.
+
+
+Chroma DB offers a self-hosted server option and supports different underlying storage options like DuckDB for standalone or ClickHouse for scalability.
+
+Chroma DB offers two memory modes:
+
+The in-memory mode
+The persistent memory
+The in-memory mode is used for rapid testing, providing proof of concept (POC) and querying, allowing the reuse of collections between runs.
+
+The persistent memory allows users to save and load data to and from a disk, causing the persistence of the database beyond the current session. This allows for the addition and deletion of documents after collection creation, and it is essential for production use cases where an in-memory database is not sufficient.
+
+Some of the key features of Chroma DB are:
+
+Chroma DB supports different underlying storage options like DuckDB for standalone or ClickHouse for scalability.
+It provides SDKs for Python and JavaScript/TypeScript and focuses on simplicity, speed, and enabling analysis.
+Chroma can store vectors from various data types, including text, images, and audio.
+Qdrant
+Qdrant is an open-source vector database and vector search engine that provides fast and scalable vector similarity search services with additional payloads.
+
+
+Here are some of the features of Qdrant:
+
+Qdrant offers support for disk-stored collections, as storage space is cheaper than memory. It has introduced the Scalar Quantization mechanism recently, which makes it possible to reduce the memory requirements by up to four times.
+Qdrant allows users to express more complex conditions for nested structures.
+It provides an asynchronous I/O interface that reduces overhead by managing I/O operations asynchronously, thus minimizing context switches.
+It uses distance metrics to measure similarities among vectors, and they must be selected at the same time you are creating a collection.
+It can be used with the Python quadrant client, which provides a convenient API to store, search, and manage points (i.e., vectors) with an additional payload.
+Milvus
+Milvus is an open-source vector database that is designed for similarity searches in dense vector datasets containing millions or even billions of vectors. Milvus vector database adopts a systemic approach to cloud-nativity by separating compute from storage and allowing you to scale both up and out.
+
+
+Milvus docs
+Here are some of the features of Milvus:
+
+Milvus uses a distributed architecture that separates storage and computing, allowing for horizontal scalability in computing nodes.
+Milvus can be scaled to handle trillions of vectors and millions of queries per second.
+Milvus supports various data types, and it provides enhanced vector similarity search with attribute filtering, UDF support, configurable consistency level, time travel, and more
+Milvus can handle high query throughput and low latency searches.
+To help users try Milvus quicker, Bin Ji, a top contributor to the Milvus community, developed Milvus Lite, a lightweight version of Milvus. It can help you get started with Milvus in minutes, while at the same time offering many benefits.
+Milvus provides a user-friendly interface for managing vectors and performing searches.
+How To Choose The Right Vector Database For Your LLM Projects
+To choose the right vector database for LLM projects, there are some factors you should consider. They include:
+
+Scalability: Since LLMs generate and consume vast amounts of vector data, it is best to choose a database that can efficiently store and manage large-scale datasets without compromising performance. Also, the vector database must be able to seamlessly handle future data additions and expansion of your LLM project’s scope.
+
+Performance: It should deliver fast query execution and swift retrieval of relevant vectors. It should also efficiently handle multi-dimensional queries and complex similarity searches.
+
+Security: The database should provide robust security features, including encryption, access controls, and authentication mechanisms. For use cases with personal or sensitive data, the vector database should align with applicable privacy regulations.
+
+Cost: Using LLM APIs already costs a fortune when running at scale, so you look out for a vector base. with flexible pricing models and one that fits your use case.
+
+Query interfaces: Evaluate the ease of interaction with the database, including available query languages, APIs, and user interfaces.
+
+Deployment options: Make sure the vector database whether cloud-based, on-premise, or hybrid solutions matches your infrastructure preferences and data sensitivity.
+
+Integration capabilities: Ensure seamless integration with your existing LLM infrastructure and other tools in your workflow.
+
+Yep! That’s it.
+
+Vector databases are generally useful when building LLM applications because they serve as an abstraction layer for handling and managing LLM data.
+
+Let me know what you think about the vector database tools mentioned here and I hear there are some really interesting vector db out there. If you have used any, please comment on what your experience was like.
+
+Happy Building!
+
+Vector Database
+Llm
+Embedding
+Vector
+100
+
+
+
+
+
+Ejiro Onose
+Written by Ejiro Onose
+115 Followers
+Still working on this....
+
+Follow
+
+More from Ejiro Onose
+Microservice Orchestration Best Practices
+Ejiro Onose
+Ejiro Onose
+
+in
+
+Ambassador Labs
+
+Microservice Orchestration Best Practices
+In this article, you’ll discover nine microservice orchestration best practices, the importance of orchestration, and more …
+8 min read
+·
+May 3, 2023
+368
+
+3
+
+
+
+LLMs on Trial: Understanding LLM Evaluation Benchmarks
+Ejiro Onose
+Ejiro Onose
+
+in
+
+Artificial Intelligence in Plain English
+
+LLMs on Trial: Understanding LLM Evaluation Benchmarks
+LLM evaluation benchmarks provide a more comprehensive way of testing LLMs on various tasks, allowing us to get a better understanding of…
+11 min read
+·
+Feb 14, 2024
+85
+
+1
+
+
+
+Using Knative and Ambassador Edge Stack to Handle Traffic
+Ejiro Onose
+Ejiro Onose
+
+in
+
+Ambassador Labs
+
+Using Knative and Ambassador Edge Stack to Handle Traffic
+While Kubernetes is an impressive container orchestration and management tool, it can be quite complex to use and doesn’t quite cut it when…
+7 min read
+·
+Aug 31, 2022
+253
+
+
+
+Ambassador Edge Stack vs Traefik vs NGINX
+Ejiro Onose
+Ejiro Onose
+
+in
+
+Ambassador Labs
+
+Ambassador Edge Stack vs Traefik vs NGINX
+Ambassador Edge Stack, Traefik, and NGINX are popular tools for implementing an API gateway and load balancer in a Kubernetes environment.
+7 min read
+·
+Jan 26, 2023
+273
+
+
+
+See all from Ejiro Onose
+Recommended from Medium
+Comparing RAG Part 2: Vector Stores; FAISS vs Chroma
+Stepkurniawan
+Stepkurniawan
+
+Comparing RAG Part 2: Vector Stores; FAISS vs Chroma
+In this study, we examine the impact of two vector stores, FAISS (https://faiss.ai) and Chroma, on the retrieved context to assess their…
+4 min read
+·
+Jan 1, 2024
+29
+
+
+
+Comparing Vector Databases
+Adam Blum
+Adam Blum
+
+Comparing Vector Databases
+If you are a developer interested in AI, there is a good chance that you may have started working with Large Language Models such as…
+10 min read
+·
+Nov 9, 2023
+211
+
+7
+
+
+
+Lists
+
+
+
+Natural Language Processing
+1380 stories
+·
+873 saves
+
+
+
+ChatGPT prompts
+47 stories
+·
+1439 saves
+Sparse embedding or BM25?
+InfiniFlow
+InfiniFlow
+
+Sparse embedding or BM25?
+Since the open-sourcing of Infinity, it has received a wide positive response from the community. Regarding the essential RAG technology we…
+7 min read
+·
+Feb 13, 2024
+16
+
+
+
+Experimenting with Vector Databases: Chromadb, Pinecone, Weaviate and Pgvector
+Vishnu Sivan
+Vishnu Sivan
+
+in
+
+CoinsBench
+
+Experimenting with Vector Databases: Chromadb, Pinecone, Weaviate and Pgvector
+Vector databases are specialized systems designed for storing, managing, and searching embedding vectors. The widespread adoption of…
+10 min read
+·
+Nov 14, 2023
+164
+
+1
+
+
+
+🚀 Blazing Fast Text Embeddings Inference for your RAG
+David Min
+David Min
+
+🚀 Blazing Fast Text Embeddings Inference for your RAG
+Hugging Face — Text Embeddings Inference (TEI)
+6 min read
+·
+Oct 21, 2023
+94
+
+2
+
+
+
+Vector Database — Introduction and Python Implementation
+Denaya
+Denaya
+
+Vector Database — Introduction and Python Implementation
+Have you heard about vector databases? They’re everywhere these days, and it’s not just tech enthusiasts buzzing about them. But why the…
+7 min read
+·
+Jan 17, 2024
+89
+
+
+
+See more recommendations
+Help
+
+Status
+
+About
+
+Careers
+
+Blog
+
+Privacy
+
+Terms
+
+Text to speech
+
+Teams
